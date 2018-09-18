@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"reflect"
 	"sync"
 	"sync/atomic"
 
@@ -84,23 +83,13 @@ func newFutureError(err error) chan *serverResponse {
 	return serverResponseChan
 }
 
-func umarshalFuture(c chan *serverResponse, respInf interface{}) (interface{}, error) {
+func umarshalFuture(c chan *serverResponse, resp interface{}) error {
 	r := <-c
 	respBytes, err := r.result, r.err
 	if err != nil {
-		return nil, err
+		return err
 	}
-	respType := reflect.TypeOf(respInf)
-	if respType.Kind() == reflect.Ptr {
-		respType = respType.Elem()
-	}
-	respRV := reflect.New(respType)
-	resp := respRV.Interface()
-	err = json.Unmarshal(respBytes, resp)
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
+	return json.Unmarshal(respBytes, resp)
 }
 
 func receiveFuture(c chan *serverResponse) ([]byte, error) {
@@ -110,7 +99,7 @@ func receiveFuture(c chan *serverResponse) ([]byte, error) {
 
 func (c *Client) handleSendPostMessage(details *sendPostDetails) {
 	serverReq := details.serverRequest
-	log.Infof("Sending post message [%s] with id %d", serverReq.method, serverReq.id)
+	log.Infof("[%s]Sending post message [%s] with id %d", c.config.Name, serverReq.method, serverReq.id)
 	httpResp, err := c.httpClient.Do(details.httpRequest)
 	if err != nil {
 		serverReq.serverResponseChan <- &serverResponse{err: err}
@@ -122,6 +111,16 @@ func (c *Client) handleSendPostMessage(details *sendPostDetails) {
 		err = fmt.Errorf("error reading json reply: %v", err)
 		serverReq.serverResponseChan <- &serverResponse{err: err}
 		return
+	}
+	if c.config.LogJSON {
+		log.Infof("[%s]Sending command content [%s](%d)\n%s", c.config.Name, serverReq.method, serverReq.id, serverReq.marshalledJSON)
+		var indentJSONOut bytes.Buffer
+		err = json.Indent(&indentJSONOut, respBytes, "", "  ")
+		if err != nil {
+			log.Errorln("Indent response json error")
+		} else {
+			log.Infof("[%s]RPC response [%s](%d)\n%s", c.config.Name, serverReq.method, serverReq.id, indentJSONOut.Bytes())
+		}
 	}
 	var resp rpcResponse
 	err = json.Unmarshal(respBytes, &resp)
@@ -160,7 +159,7 @@ func (c *Client) sendPostHandler() {
 		}
 	}()
 	c.wg.Done()
-	log.Infof("RPC client send handler done for %s", c.config.Host)
+	log.Infof("[%s]RPC client send handler done for %s", c.config.Name, c.config.Host)
 }
 
 func (c *Client) sendPostRequest(httpReq *http.Request, serverReq *serverRequest) {
@@ -186,7 +185,7 @@ func (c *Client) sendPost(serverReq *serverRequest) {
 	httpReq.Close = true
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.SetBasicAuth(c.config.User, c.config.Pass)
-	log.Infof("Sending command [%s] with id %d", serverReq.method, serverReq.id)
+	log.Infof("[%s]Sending command [%s] with id %d", c.config.Name, serverReq.method, serverReq.id)
 	c.sendPostRequest(httpReq, serverReq)
 }
 
@@ -218,7 +217,7 @@ func (c *Client) doShutdown() bool {
 		return false
 	default:
 	}
-	log.Infof("Shutting down RPC client %s", c.config.Host)
+	log.Infof("[%s]Shutting down RPC client %s", c.config.Name, c.config.Host)
 	close(c.shutdown)
 	return true
 }
@@ -229,7 +228,7 @@ func (c *Client) Shutdown() {
 	}
 }
 func (c *Client) start() {
-	log.Infof("Starting RPC client %s:%s", c.config.Name, c.config.Host)
+	log.Infof("[%s]Starting RPC client %s", c.config.Name, c.config.Host)
 	c.wg.Add(1)
 	go c.sendPostHandler()
 }
@@ -240,10 +239,21 @@ func (c *Client) WaitForShutdown() {
 
 // ConnConfig RPC server conn info
 type ConnConfig struct {
-	Name string
-	Host string
-	User string
-	Pass string
+	Name    string `json:"name"`
+	Host    string `json:"host"`
+	User    string `json:"user"`
+	Pass    string `json:"pass"`
+	LogJSON bool   `json:"logJSON"`
+}
+
+func NewConfig(confFile string) (*ConnConfig, error) {
+	configBytes, err := ioutil.ReadFile(confFile)
+	if err != nil {
+		return nil, err
+	}
+	var connConfig ConnConfig
+	err = json.Unmarshal(configBytes, &connConfig)
+	return &connConfig, err
 }
 
 func New(config *ConnConfig) *Client {

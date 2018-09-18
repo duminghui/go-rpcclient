@@ -6,7 +6,6 @@ type ErrorCode int
 
 const (
 	ErrDuplicateMethod ErrorCode = iota
-	ErrInvalidUsageFlags
 	ErrInvalidType
 	ErrEmbeddedType
 	ErrUnexportedField
@@ -21,7 +20,6 @@ const (
 
 var errorCodeStrings = map[ErrorCode]string{
 	ErrDuplicateMethod:      "ErrDuplicateMethod",
-	ErrInvalidUsageFlags:    "ErrInvalidUsageFlags",
 	ErrInvalidType:          "ErrInvalidType",
 	ErrEmbeddedType:         "ErrEmbeddedType",
 	ErrUnexportedField:      "ErrUnexportedField",

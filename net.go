@@ -8,11 +8,9 @@ import (
 type FutureGetConnectionCountResult chan *serverResponse
 
 func (r FutureGetConnectionCountResult) Receive() (int64, error) {
-	resp, err := umarshalFuture(r, (*int64)(nil))
-	if err != nil {
-		return 0, err
-	}
-	return *(resp.(*int64)), nil
+	var result int64
+	err := umarshalFuture(r, &result)
+	return result, err
 }
 
 func (c *Client) GetConnectionCountAsync() FutureGetConnectionCountResult {

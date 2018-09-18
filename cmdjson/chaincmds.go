@@ -21,8 +21,18 @@ func NewGetConnectionCountCmd() *GetConnectionCountCmd {
 	return &GetConnectionCountCmd{}
 }
 
+type ValidateAddressCmd struct {
+	Address string
+}
+
+func NewValidateAddressCmd(address string) *ValidateAddressCmd {
+	return &ValidateAddressCmd{
+		Address: address,
+	}
+}
+
 func init() {
-	flags := UsageFlag(0)
-	MustRegisterCmd("getconnectioncount", (*GetConnectionCountCmd)(nil), flags)
-	MustRegisterCmd("getblock", (*GetBlockCmd)(nil), flags)
+	MustRegisterCmd("getconnectioncount", (*GetConnectionCountCmd)(nil))
+	MustRegisterCmd("getblock", (*GetBlockCmd)(nil))
+	MustRegisterCmd("validateaddress", (*ValidateAddressCmd)(nil))
 }
