@@ -56,10 +56,10 @@ func (c *Client) GetNewAddress(account string) (string, error) {
 
 type FutureValidateAddressResult chan *serverResponse
 
-func (r FutureValidateAddressResult) Receive() (cmdjson.ValidateAddressResult, error) {
+func (r FutureValidateAddressResult) Receive() (*cmdjson.ValidateAddressResult, error) {
 	var result cmdjson.ValidateAddressResult
 	err := umarshalFuture(r, &result)
-	return result, err
+	return &result, err
 }
 
 func (c *Client) ValidateAddressAsync(address string) FutureValidateAddressResult {
@@ -67,6 +67,23 @@ func (c *Client) ValidateAddressAsync(address string) FutureValidateAddressResul
 	return c.sendCmd(cmd)
 }
 
-func (c *Client) ValidateAddress(address string) (cmdjson.ValidateAddressResult, error) {
+func (c *Client) ValidateAddress(address string) (*cmdjson.ValidateAddressResult, error) {
 	return c.ValidateAddressAsync(address).Receive()
+}
+
+type FuntureGetTransactionResult chan *serverResponse
+
+func (r FuntureGetTransactionResult) Receive() (*cmdjson.GetTransactionResult, error) {
+	var result cmdjson.GetTransactionResult
+	err := umarshalFuture(r, &result)
+	return &result, err
+}
+
+func (c *Client) GetTransactionAsync(txid string, includeWatchOnly *bool) FuntureGetTransactionResult {
+	cmd := cmdjson.NewGetTransactionCmd(txid, includeWatchOnly)
+	return c.sendCmd(cmd)
+}
+
+func (c *Client) GetTransaction(txid string, includeWatchOnly *bool) (*cmdjson.GetTransactionResult, error) {
+	return c.GetTransactionAsync(txid, includeWatchOnly).Receive()
 }

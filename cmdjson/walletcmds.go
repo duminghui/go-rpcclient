@@ -35,8 +35,21 @@ func NewGetNewAddressCmd(account *string) *GetNewAddressCmd {
 		Account: account,
 	}
 }
+
+type GetTransactionCmd struct {
+	TxID             string
+	IncludeWatchOnly *bool
+}
+
+func NewGetTransactionCmd(txID string, includeWathcOnly *bool) *GetTransactionCmd {
+	return &GetTransactionCmd{
+		TxID:             txID,
+		IncludeWatchOnly: includeWathcOnly,
+	}
+}
 func init() {
 	MustRegisterCmd("listreceivedbyaddress", (*ListReceivedByAddressCmd)(nil))
 	MustRegisterCmd("sendtoaddress", (*SendToAddressCmd)(nil))
 	MustRegisterCmd("getnewaddress", (*GetNewAddressCmd)(nil))
+	MustRegisterCmd("gettransaction", (*GetTransactionCmd)(nil))
 }

@@ -99,9 +99,10 @@ func receiveFuture(c chan *serverResponse) ([]byte, error) {
 
 func (c *Client) handleSendPostMessage(details *sendPostDetails) {
 	serverReq := details.serverRequest
-	log.Infof("[%s]Sending post message [%s] with id %d", c.config.Name, serverReq.method, serverReq.id)
+	// log.Infof("[%s]Sending post message [%s] with id %d", c.config.Name, serverReq.method, serverReq.id)
 	httpResp, err := c.httpClient.Do(details.httpRequest)
 	if err != nil {
+		log.Errorf("[%s]Sending post message [%s][%d] error:%s", c.config.Name, serverReq.method, serverReq.id, err)
 		serverReq.serverResponseChan <- &serverResponse{err: err}
 		return
 	}
@@ -113,11 +114,11 @@ func (c *Client) handleSendPostMessage(details *sendPostDetails) {
 		return
 	}
 	if c.config.LogJSON {
-		log.Infof("[%s]Sending command content [%s](%d)\n%s", c.config.Name, serverReq.method, serverReq.id, serverReq.marshalledJSON)
+		// log.Infof("[%s]Sending command content [%s](%d)\n%s", c.config.Name, serverReq.method, serverReq.id, serverReq.marshalledJSON)
 		var indentJSONOut bytes.Buffer
 		err = json.Indent(&indentJSONOut, respBytes, "", "  ")
 		if err != nil {
-			log.Errorln("Indent response json error")
+			log.Errorf("[%s]Indent response json error: %s [%s]", c.config.Name, err, respBytes)
 		} else {
 			log.Infof("[%s]RPC response [%s](%d)\n%s", c.config.Name, serverReq.method, serverReq.id, indentJSONOut.Bytes())
 		}
@@ -233,6 +234,10 @@ func (c *Client) start() {
 	go c.sendPostHandler()
 }
 
+func (c *Client) Start() {
+	c.start()
+}
+
 func (c *Client) WaitForShutdown() {
 	c.wg.Wait()
 }
@@ -263,6 +268,5 @@ func New(config *ConnConfig) *Client {
 		sendPostChan: make(chan *sendPostDetails, sendPostBufferSize),
 		shutdown:     make(chan struct{}),
 	}
-	client.start()
 	return client
 }
