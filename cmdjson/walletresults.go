@@ -33,7 +33,7 @@ type GetTransactionDetail struct {
 	Address  string  `json:"address"`
 	Category string  `json:"category"`
 	Amount   float64 `json:"amount"`
-	Lable    string  `json:"lable"`
+	Label    string  `json:"label"`
 	Vout     uint32  `json:"vout"`
 	Fee      float64 `json:"fee,omitempty"`
 }

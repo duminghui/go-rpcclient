@@ -6,7 +6,7 @@ import (
 )
 
 func TestListReceivedByAddress(t *testing.T) {
-	// t.SkipNow()
+	t.SkipNow()
 	client := New(config)
 	_, err := client.ListReceivedByAddress(0, false, false)
 	if err != nil {

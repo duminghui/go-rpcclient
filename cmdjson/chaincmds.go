@@ -32,7 +32,8 @@ func NewValidateAddressCmd(address string) *ValidateAddressCmd {
 }
 
 func init() {
-	MustRegisterCmd("getconnectioncount", (*GetConnectionCountCmd)(nil))
-	MustRegisterCmd("getblock", (*GetBlockCmd)(nil))
-	MustRegisterCmd("validateaddress", (*ValidateAddressCmd)(nil))
+	flags := UsageFlag(0)
+	MustRegisterCmd("getconnectioncount", (*GetConnectionCountCmd)(nil), flags)
+	MustRegisterCmd("getblock", (*GetBlockCmd)(nil), flags)
+	MustRegisterCmd("validateaddress", (*ValidateAddressCmd)(nil), flags)
 }

@@ -8,7 +8,8 @@ type ListReceivedByAddressCmd struct {
 }
 
 func NewListReceivedByAddressCmd(minConf *int, includeEmpty, includeWatchOnly *bool) *ListReceivedByAddressCmd {
-	return &ListReceivedByAddressCmd{MinConf: minConf,
+	return &ListReceivedByAddressCmd{
+		MinConf:          minConf,
 		IncludeEmpty:     includeEmpty,
 		IncludeWatchOnly: includeWatchOnly,
 	}
@@ -48,8 +49,9 @@ func NewGetTransactionCmd(txID string, includeWathcOnly *bool) *GetTransactionCm
 	}
 }
 func init() {
-	MustRegisterCmd("listreceivedbyaddress", (*ListReceivedByAddressCmd)(nil))
-	MustRegisterCmd("sendtoaddress", (*SendToAddressCmd)(nil))
-	MustRegisterCmd("getnewaddress", (*GetNewAddressCmd)(nil))
-	MustRegisterCmd("gettransaction", (*GetTransactionCmd)(nil))
+	flags := UFWalletOnly
+	MustRegisterCmd("listreceivedbyaddress", (*ListReceivedByAddressCmd)(nil), flags)
+	MustRegisterCmd("sendtoaddress", (*SendToAddressCmd)(nil), flags)
+	MustRegisterCmd("getnewaddress", (*GetNewAddressCmd)(nil), flags)
+	MustRegisterCmd("gettransaction", (*GetTransactionCmd)(nil), flags)
 }

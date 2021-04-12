@@ -6,13 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/duminghui/go-rpcclient/cmdjson"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"sync"
 	"sync/atomic"
-
-	"github.com/duminghui/go-rpcclient/cmdjson"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -28,11 +27,6 @@ var log = logrus.New()
 
 func SetLog(logger *logrus.Logger) {
 	log = logger
-}
-
-type rpcResponse struct {
-	Result json.RawMessage   `json:"result"`
-	Error  *cmdjson.RPCError `json:"error"`
 }
 
 type sendPostDetails struct {
@@ -53,13 +47,6 @@ type serverRequest struct {
 type serverResponse struct {
 	result []byte
 	err    error
-}
-
-func (r rpcResponse) result() (result []byte, err error) {
-	if r.Error != nil {
-		return nil, r.Error
-	}
-	return r.Result, nil
 }
 
 // Client to connection RPC server
@@ -83,7 +70,7 @@ func newFutureError(err error) chan *serverResponse {
 	return serverResponseChan
 }
 
-func umarshalFuture(c chan *serverResponse, resp interface{}) error {
+func unmarshalFuture(c chan *serverResponse, resp interface{}) error {
 	r := <-c
 	respBytes, err := r.result, r.err
 	if err != nil {
@@ -107,14 +94,14 @@ func (c *Client) handleSendPostMessage(details *sendPostDetails) {
 		return
 	}
 	respBytes, err := ioutil.ReadAll(httpResp.Body)
-	httpResp.Body.Close()
+	_ = httpResp.Body.Close()
 	if err != nil {
 		err = fmt.Errorf("error reading json reply: %v", err)
 		serverReq.serverResponseChan <- &serverResponse{err: err}
 		return
 	}
 	if c.config.LogJSON {
-		// log.Infof("[%s]Sending command content [%s](%d)\n%s", c.config.Name, serverReq.method, serverReq.id, serverReq.marshalledJSON)
+		log.Infof("[%s]Sending command content [%s](%d)\n%s", c.config.Name, serverReq.method, serverReq.id, serverReq.marshalledJSON)
 		var indentJSONOut bytes.Buffer
 		err = json.Indent(&indentJSONOut, respBytes, "", "  ")
 		if err != nil {
@@ -123,15 +110,15 @@ func (c *Client) handleSendPostMessage(details *sendPostDetails) {
 			log.Infof("[%s]RPC response [%s](%d)\n%s", c.config.Name, serverReq.method, serverReq.id, indentJSONOut.Bytes())
 		}
 	}
-	var resp rpcResponse
+	var resp cmdjson.Response
 	err = json.Unmarshal(respBytes, &resp)
 	if err != nil {
 		err = fmt.Errorf("status code: %d, response: %q", httpResp.StatusCode, string(respBytes))
 		serverReq.serverResponseChan <- &serverResponse{err: err}
 		return
 	}
-	res, err := resp.result()
-	serverReq.serverResponseChan <- &serverResponse{result: res, err: err}
+
+	serverReq.serverResponseChan <- &serverResponse{result: resp.Result, err: resp.Error}
 }
 
 func (c *Client) sendPostHandler() {
@@ -196,7 +183,10 @@ func (c *Client) sendCmd(cmd interface{}) chan *serverResponse {
 		return newFutureError(err)
 	}
 	id := c.NextID()
-	marshalledJSON, err := cmdjson.MarshalCmd(id, cmd)
+
+	marshalledJSON, err := cmdjson.MarshalCmd(cmdjson.RpcVersion1, id, cmd)
+	fmt.Println(string(marshalledJSON))
+
 	if err != nil {
 		return newFutureError(err)
 	}

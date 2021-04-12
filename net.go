@@ -9,7 +9,7 @@ type FutureGetConnectionCountResult chan *serverResponse
 
 func (r FutureGetConnectionCountResult) Receive() (int64, error) {
 	var result int64
-	err := umarshalFuture(r, &result)
+	err := unmarshalFuture(r, &result)
 	return result, err
 }
 

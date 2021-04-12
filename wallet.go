@@ -7,7 +7,7 @@ type FutureListReceivedByAddressResult chan *serverResponse
 
 func (r FutureListReceivedByAddressResult) Receive() ([]cmdjson.ListReceivedByAddressResult, error) {
 	var result []cmdjson.ListReceivedByAddressResult
-	err := umarshalFuture(r, &result)
+	err := unmarshalFuture(r, &result)
 	return result, err
 }
 
@@ -24,7 +24,7 @@ type FutureSendToAddressResult chan *serverResponse
 
 func (r FutureSendToAddressResult) Receive() (string, error) {
 	var result string
-	err := umarshalFuture(r, &result)
+	err := unmarshalFuture(r, &result)
 	return result, err
 }
 
@@ -41,7 +41,7 @@ type FutureGetNewAddressResult chan *serverResponse
 
 func (r FutureGetNewAddressResult) Receive() (string, error) {
 	var result string
-	err := umarshalFuture(r, &result)
+	err := unmarshalFuture(r, &result)
 	return result, err
 }
 
@@ -58,7 +58,7 @@ type FutureValidateAddressResult chan *serverResponse
 
 func (r FutureValidateAddressResult) Receive() (*cmdjson.ValidateAddressResult, error) {
 	var result cmdjson.ValidateAddressResult
-	err := umarshalFuture(r, &result)
+	err := unmarshalFuture(r, &result)
 	return &result, err
 }
 
@@ -71,15 +71,15 @@ func (c *Client) ValidateAddress(address string) (*cmdjson.ValidateAddressResult
 	return c.ValidateAddressAsync(address).Receive()
 }
 
-type FuntureGetTransactionResult chan *serverResponse
+type FutureGetTransactionResult chan *serverResponse
 
-func (r FuntureGetTransactionResult) Receive() (*cmdjson.GetTransactionResult, error) {
+func (r FutureGetTransactionResult) Receive() (*cmdjson.GetTransactionResult, error) {
 	var result cmdjson.GetTransactionResult
-	err := umarshalFuture(r, &result)
+	err := unmarshalFuture(r, &result)
 	return &result, err
 }
 
-func (c *Client) GetTransactionAsync(txid string, includeWatchOnly *bool) FuntureGetTransactionResult {
+func (c *Client) GetTransactionAsync(txid string, includeWatchOnly *bool) FutureGetTransactionResult {
 	cmd := cmdjson.NewGetTransactionCmd(txid, includeWatchOnly)
 	return c.sendCmd(cmd)
 }
