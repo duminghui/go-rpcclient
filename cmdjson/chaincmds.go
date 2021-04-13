@@ -64,10 +64,29 @@ func NewCreateRawTransactionCmd(inputs []TransactionInput, amounts map[string]fl
 	}
 }
 
+// SendRawTransactionCmd defines the sendrawtransaction JSON-RPC command.
+type SendRawTransactionCmd struct {
+	HexTx      string
+	FeeSetting *bool `jsonrpcdefault:"false"`
+}
+
+// NewSendRawTransactionCmd returns a new instance which can be used to issue a
+// sendrawtransaction JSON-RPC command.
+//
+// The parameters which are pointers indicate they are optional.  Passing nil
+// for optional parameters will use the default value.
+func NewSendRawTransactionCmd(hexTx string, allowHighFees *bool) *SendRawTransactionCmd {
+	return &SendRawTransactionCmd{
+		HexTx:      hexTx,
+		FeeSetting: allowHighFees,
+	}
+}
+
 func init() {
 	flags := UsageFlag(0)
 	MustRegisterCmd("createrawtransaction", (*CreateRawTransactionCmd)(nil), flags)
 	MustRegisterCmd("getconnectioncount", (*GetConnectionCountCmd)(nil), flags)
 	MustRegisterCmd("getblock", (*GetBlockCmd)(nil), flags)
+	MustRegisterCmd("sendrawtransaction", (*SendRawTransactionCmd)(nil), flags)
 	MustRegisterCmd("validateaddress", (*ValidateAddressCmd)(nil), flags)
 }

@@ -15,12 +15,6 @@ func (r FutureGetBlockResult) Receive() (string, error) {
 
 func (c *Client) GetBlockAsync(blockHash string) FutureGetBlockResult {
 	cmd := cmdjson.NewGetBlockCmd(blockHash, nil, cmdjson.Bool(false))
-	//cmd, err := cmdjson.NewCmd("getblock", blockHash)
-	//if err != nil {
-	//	fmt.Println(err)
-	//	panic("DDDDD")
-	//
-	//}
 	return c.sendCmd(cmd)
 }
 
@@ -28,19 +22,21 @@ func (c *Client) GetBlock(blockHash string) (string, error) {
 	return c.GetBlockAsync(blockHash).Receive()
 }
 
-type CreateRawTransactionResult chan *serverResponse
+type FutureSendRawTransactionResult chan *serverResponse
 
-func (r CreateRawTransactionResult) Receive() (string, error) {
+func (r FutureSendRawTransactionResult) Receive() (string, error) {
 	var result string
 	err := unmarshalFuture(r, &result)
 	return result, err
 }
 
-func (c *Client) CreateRawTransactionAsync(inputs []cmdjson.TransactionInput, amounts map[string]float64, lockTime *int64) CreateRawTransactionResult {
-	cmd := cmdjson.NewCreateRawTransactionCmd(inputs, amounts, lockTime)
+func (c *Client) SendRawTransactionAsync(hexTx string, allowHighFees *bool) FutureSendRawTransactionResult {
+	cmd := cmdjson.NewSendRawTransactionCmd(hexTx, allowHighFees)
 	return c.sendCmd(cmd)
 }
 
-func (c *Client) CreateRawTransaction(inputs []cmdjson.TransactionInput, amounts map[string]float64, lockTime *int64) (string, error) {
-	return c.CreateRawTransactionAsync(inputs, amounts, lockTime).Receive()
+// SendRawTransaction submits the encoded transaction to the server which will
+// then relay it to the network.
+func (c *Client) SendRawTransaction(hexTx string, allowHighFees *bool) (string, error) {
+	return c.SendRawTransactionAsync(hexTx, allowHighFees).Receive()
 }

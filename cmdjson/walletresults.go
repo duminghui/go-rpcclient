@@ -61,3 +61,10 @@ type ListUnspentResult struct {
 	Confirmations int64   `json:"confirmations"`
 	Spendable     bool    `json:"spendable"`
 }
+
+// SignRawTransactionResult models the data from the signrawtransaction
+// command.
+type SignRawTransactionResult struct {
+	Hex      string `json:"hex"`
+	Complete bool   `json:"complete"`
+}

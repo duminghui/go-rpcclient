@@ -106,3 +106,37 @@ func (c *Client) ListUnspentAsync(minConf, maxConf *int, addrs *[]string) Future
 func (c *Client) ListUnspent(minConf, maxConf *int, addr *[]string) ([]cmdjson.ListUnspentResult, error) {
 	return c.ListUnspentAsync(minConf, maxConf, addr).Receive()
 }
+
+type CreateRawTransactionResult chan *serverResponse
+
+func (r CreateRawTransactionResult) Receive() (string, error) {
+	var result string
+	err := unmarshalFuture(r, &result)
+	return result, err
+}
+
+func (c *Client) CreateRawTransactionAsync(inputs []cmdjson.TransactionInput, amounts map[string]float64, lockTime *int64) CreateRawTransactionResult {
+	cmd := cmdjson.NewCreateRawTransactionCmd(inputs, amounts, lockTime)
+	return c.sendCmd(cmd)
+}
+
+func (c *Client) CreateRawTransaction(inputs []cmdjson.TransactionInput, amounts map[string]float64, lockTime *int64) (string, error) {
+	return c.CreateRawTransactionAsync(inputs, amounts, lockTime).Receive()
+}
+
+type SignRawTransactionResult chan *serverResponse
+
+func (r SignRawTransactionResult) Receive() (cmdjson.SignRawTransactionResult, error) {
+	var result cmdjson.SignRawTransactionResult
+	err := unmarshalFuture(r, &result)
+	return result, err
+}
+
+func (c *Client) SignRawTransactionAsync(hexEncodedTx string, inputs *[]cmdjson.RawTxInput, privKeys *[]string, flags *string) SignRawTransactionResult {
+	cmd := cmdjson.NewSignRawTransactionCmd(hexEncodedTx, inputs, privKeys, flags)
+	return c.sendCmd(cmd)
+}
+
+func (c *Client) SignRawTransaction(hexEncodedTx string, inputs *[]cmdjson.RawTxInput, privKeys *[]string, flags *string) (cmdjson.SignRawTransactionResult, error) {
+	return c.SignRawTransactionAsync(hexEncodedTx, inputs, privKeys, flags).Receive()
+}

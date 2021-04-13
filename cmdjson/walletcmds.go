@@ -69,11 +69,43 @@ func NewListUnspentCmd(minConf, maxConf *int, addresses *[]string) *ListUnspentC
 	}
 }
 
+// RawTxInput models the data needed for raw transaction input that is used in
+// the SignRawTransactionCmd struct.
+type RawTxInput struct {
+	Txid         string `json:"txid"`
+	Vout         uint32 `json:"vout"`
+	ScriptPubKey string `json:"scriptPubKey"`
+	RedeemScript string `json:"redeemScript"`
+}
+
+// SignRawTransactionCmd defines the signrawtransaction JSON-RPC command.
+type SignRawTransactionCmd struct {
+	RawTx    string
+	Inputs   *[]RawTxInput
+	PrivKeys *[]string
+	Flags    *string `jsonrpcdefault:"\"ALL\""`
+}
+
+// NewSignRawTransactionCmd returns a new instance which can be used to issue a
+// signrawtransaction JSON-RPC command.
+//
+// The parameters which are pointers indicate they are optional.  Passing nil
+// for optional parameters will use the default value.
+func NewSignRawTransactionCmd(hexEncodedTx string, inputs *[]RawTxInput, privKeys *[]string, flags *string) *SignRawTransactionCmd {
+	return &SignRawTransactionCmd{
+		RawTx:    hexEncodedTx,
+		Inputs:   inputs,
+		PrivKeys: privKeys,
+		Flags:    flags,
+	}
+}
+
 func init() {
 	flags := UFWalletOnly
+	MustRegisterCmd("getnewaddress", (*GetNewAddressCmd)(nil), flags)
+	MustRegisterCmd("gettransaction", (*GetTransactionCmd)(nil), flags)
 	MustRegisterCmd("listreceivedbyaddress", (*ListReceivedByAddressCmd)(nil), flags)
 	MustRegisterCmd("listunspent", (*ListUnspentCmd)(nil), flags)
 	MustRegisterCmd("sendtoaddress", (*SendToAddressCmd)(nil), flags)
-	MustRegisterCmd("getnewaddress", (*GetNewAddressCmd)(nil), flags)
-	MustRegisterCmd("gettransaction", (*GetTransactionCmd)(nil), flags)
+	MustRegisterCmd("signrawtransaction", (*SignRawTransactionCmd)(nil), flags)
 }
