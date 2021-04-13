@@ -98,11 +98,11 @@ func (r FutureListUnspentResult) Receive() ([]cmdjson.ListUnspentResult, error) 
 	return result, err
 }
 
-func (c *Client) ListUnspentAsync(minConf, maxConf *int, addrs []string) FutureListUnspentResult {
-	cmd := cmdjson.NewListUnspentCmd(minConf, maxConf, &addrs)
+func (c *Client) ListUnspentAsync(minConf, maxConf *int, addrs *[]string) FutureListUnspentResult {
+	cmd := cmdjson.NewListUnspentCmd(minConf, maxConf, addrs)
 	return c.sendCmd(cmd)
 }
 
-func (c *Client) ListUnspent(minConf, maxConf *int, addr []string) ([]cmdjson.ListUnspentResult, error) {
+func (c *Client) ListUnspent(minConf, maxConf *int, addr *[]string) ([]cmdjson.ListUnspentResult, error) {
 	return c.ListUnspentAsync(minConf, maxConf, addr).Receive()
 }
