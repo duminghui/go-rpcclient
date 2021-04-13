@@ -39,11 +39,31 @@ func TestGetNewAddress(t *testing.T) {
 }
 
 func TestValidateAddress(t *testing.T) {
+	t.SkipNow()
 	client := New(config)
-	validateAddress, err := client.ValidateAddress("RRUwJogFBp9PVnrVs1RUHM1Xq728GNSz9S")
+	client.Start()
+	validateAddress, err := client.ValidateAddress("RRUwJogFBp9PVnrVs1RUHM1Xq728GNSz9asdfasdfsadfS")
+	client.Shutdown()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	fmt.Printf("%#v\n", validateAddress)
+
+}
+
+func TestClient_ListUnspent(t *testing.T) {
+	//t.SkipNow()
+	client := New(config)
+	client.Start()
+	unspentList, err := client.ListUnspent(nil, nil, nil)
+	client.Shutdown()
+	if err != nil {
+		fmt.Printf("err:%v\n", err)
+		return
+	}
+	fmt.Printf("Size:%v\n", len(unspentList))
+	//for _, unspent := range unspentList {
+	//	fmt.Printf("unspect:%v\n", unspent)
+	//}
 }

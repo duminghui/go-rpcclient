@@ -47,7 +47,7 @@ type RPCError struct {
 }
 
 // Guarantee RPCError satisfies the builtin error interface.
-var _, _ error = RPCError{}, (*RPCError)(nil)
+//var _, _ error = RPCError{}, (*RPCError)(nil)
 
 // Error returns a string describing the RPC error.  This satisfies the
 // builtin error interface.
@@ -55,14 +55,14 @@ func (e RPCError) Error() string {
 	return fmt.Sprintf("%d: %s", e.Code, e.Message)
 }
 
-// NewRPCError constructs and returns a new JSON-RPC error that is suitable
-// for use in a JSON-RPC Response object.
-func NewRPCError(code RPCErrorCode, message string) *RPCError {
-	return &RPCError{
-		Code:    code,
-		Message: message,
-	}
-}
+//// NewRPCError constructs and returns a new JSON-RPC error that is suitable
+//// for use in a JSON-RPC Response object.
+//func NewRPCError(code RPCErrorCode, message string) *RPCError {
+//	return &RPCError{
+//		Code:    code,
+//		Message: message,
+//	}
+//}
 
 // IsValidIDType checks that the ID field (which can go in any of the JSON-RPC
 // requests, responses, or notifications) is valid.  JSON-RPC 1.0 allows any
@@ -97,52 +97,52 @@ type Request struct {
 	ID      interface{}       `json:"id"`
 }
 
-// UnmarshalJSON is a custom unmarshal func for the Request struct. The param
-// field defaults to an empty json.RawMessage array it is omitted by the request
-// or nil if the supplied value is invalid.
-func (request *Request) UnmarshalJSON(b []byte) error {
-	// Step 1: Create a type alias of the original struct.
-	type Alias Request
-
-	// Step 2: Create an anonymous struct with raw replacements for the special
-	// fields.
-	aux := &struct {
-		Jsonrpc string        `json:"jsonrpc"`
-		Params  []interface{} `json:"params"`
-		*Alias
-	}{
-		Alias: (*Alias)(request),
-	}
-
-	// Step 3: Unmarshal the data into the anonymous struct.
-	err := json.Unmarshal(b, &aux)
-	if err != nil {
-		return err
-	}
-
-	// Step 4: Convert the raw fields to the desired types
-
-	version := RPCVersion(aux.Jsonrpc)
-	if version.IsValid() {
-		request.Jsonrpc = version
-	}
-
-	rawParams := make([]json.RawMessage, 0)
-
-	for _, param := range aux.Params {
-		marshalledParam, err := json.Marshal(param)
-		if err != nil {
-			return err
-		}
-
-		rawMessage := json.RawMessage(marshalledParam)
-		rawParams = append(rawParams, rawMessage)
-	}
-
-	request.Params = rawParams
-
-	return nil
-}
+//// UnmarshalJSON is a custom unmarshal func for the Request struct. The param
+//// field defaults to an empty json.RawMessage array it is omitted by the request
+//// or nil if the supplied value is invalid.
+//func (request *Request) UnmarshalJSON(b []byte) error {
+//	// Step 1: Create a type alias of the original struct.
+//	type Alias Request
+//
+//	// Step 2: Create an anonymous struct with raw replacements for the special
+//	// fields.
+//	aux := &struct {
+//		Jsonrpc string        `json:"jsonrpc"`
+//		Params  []interface{} `json:"params"`
+//		*Alias
+//	}{
+//		Alias: (*Alias)(request),
+//	}
+//
+//	// Step 3: Unmarshal the data into the anonymous struct.
+//	err := json.Unmarshal(b, &aux)
+//	if err != nil {
+//		return err
+//	}
+//
+//	// Step 4: Convert the raw fields to the desired types
+//
+//	version := RPCVersion(aux.Jsonrpc)
+//	if version.IsValid() {
+//		request.Jsonrpc = version
+//	}
+//
+//	rawParams := make([]json.RawMessage, 0)
+//
+//	for _, param := range aux.Params {
+//		marshalledParam, err := json.Marshal(param)
+//		if err != nil {
+//			return err
+//		}
+//
+//		rawMessage := json.RawMessage(marshalledParam)
+//		rawParams = append(rawParams, rawMessage)
+//	}
+//
+//	request.Params = rawParams
+//
+//	return nil
+//}
 
 // NewRequest returns a new JSON-RPC request object given the provided rpc
 // version, id, method, and parameters.  The parameters are marshalled into a
@@ -182,58 +182,58 @@ func NewRequest(rpcVersion RPCVersion, id interface{}, method string, params []i
 	}, nil
 }
 
-// Response is the general form of a JSON-RPC response.  The type of the
-// Result field varies from one command to the next, so it is implemented as an
-// interface.  The ID field has to be a pointer to allow for a nil value when
-// empty.
-type Response struct {
-	Jsonrpc RPCVersion      `json:"jsonrpc"`
-	Result  json.RawMessage `json:"result"`
-	Error   *RPCError       `json:"error"`
-	ID      *interface{}    `json:"id"`
-}
+//// Response is the general form of a JSON-RPC response.  The type of the
+//// Result field varies from one command to the next, so it is implemented as an
+//// interface.  The ID field has to be a pointer to allow for a nil value when
+//// empty.
+//type Response struct {
+//	Jsonrpc RPCVersion      `json:"jsonrpc"`
+//	Result  json.RawMessage `json:"result"`
+//	Error   *RPCError       `json:"error"`
+//	ID      *interface{}    `json:"id"`
+//}
 
-// NewResponse returns a new JSON-RPC response object given the provided rpc
-// version, id, marshalled result, and RPC error.  This function is only
-// provided in case the caller wants to construct raw responses for some reason.
-// Typically callers will instead want to create the fully marshalled JSON-RPC
-// response to send over the wire with the MarshalResponse function.
-func NewResponse(rpcVersion RPCVersion, id interface{}, marshalledResult []byte, rpcErr *RPCError) (*Response, error) {
-	if !rpcVersion.IsValid() {
-		str := fmt.Sprintf("rpcversion '%s' is invalid", rpcVersion)
-		return nil, makeError(ErrInvalidType, str)
-	}
-
-	if !IsValidIDType(id) {
-		str := fmt.Sprintf("the id of type '%T' is invalid", id)
-		return nil, makeError(ErrInvalidType, str)
-	}
-
-	pid := &id
-	return &Response{
-		Jsonrpc: rpcVersion,
-		Result:  marshalledResult,
-		Error:   rpcErr,
-		ID:      pid,
-	}, nil
-}
-
-// MarshalResponse marshals the passed rpc version, id, result, and RPCError to
-// a JSON-RPC response byte slice that is suitable for transmission to a
-// JSON-RPC client.
-func MarshalResponse(rpcVersion RPCVersion, id interface{}, result interface{}, rpcErr *RPCError) ([]byte, error) {
-	if !rpcVersion.IsValid() {
-		str := fmt.Sprintf("rpcversion '%s' is invalid", rpcVersion)
-		return nil, makeError(ErrInvalidType, str)
-	}
-
-	marshalledResult, err := json.Marshal(result)
-	if err != nil {
-		return nil, err
-	}
-	response, err := NewResponse(rpcVersion, id, marshalledResult, rpcErr)
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(&response)
-}
+//// NewResponse returns a new JSON-RPC response object given the provided rpc
+//// version, id, marshalled result, and RPC error.  This function is only
+//// provided in case the caller wants to construct raw responses for some reason.
+//// Typically callers will instead want to create the fully marshalled JSON-RPC
+//// response to send over the wire with the MarshalResponse function.
+//func NewResponse(rpcVersion RPCVersion, id interface{}, marshalledResult []byte, rpcErr *RPCError) (*Response, error) {
+//	if !rpcVersion.IsValid() {
+//		str := fmt.Sprintf("rpcversion '%s' is invalid", rpcVersion)
+//		return nil, makeError(ErrInvalidType, str)
+//	}
+//
+//	if !IsValidIDType(id) {
+//		str := fmt.Sprintf("the id of type '%T' is invalid", id)
+//		return nil, makeError(ErrInvalidType, str)
+//	}
+//
+//	pid := &id
+//	return &Response{
+//		Jsonrpc: rpcVersion,
+//		Result:  marshalledResult,
+//		Error:   rpcErr,
+//		ID:      pid,
+//	}, nil
+//}
+//
+//// MarshalResponse marshals the passed rpc version, id, result, and RPCError to
+//// a JSON-RPC response byte slice that is suitable for transmission to a
+//// JSON-RPC client.
+//func MarshalResponse(rpcVersion RPCVersion, id interface{}, result interface{}, rpcErr *RPCError) ([]byte, error) {
+//	if !rpcVersion.IsValid() {
+//		str := fmt.Sprintf("rpcversion '%s' is invalid", rpcVersion)
+//		return nil, makeError(ErrInvalidType, str)
+//	}
+//
+//	marshalledResult, err := json.Marshal(result)
+//	if err != nil {
+//		return nil, err
+//	}
+//	response, err := NewResponse(rpcVersion, id, marshalledResult, rpcErr)
+//	if err != nil {
+//		return nil, err
+//	}
+//	return json.Marshal(&response)
+//}

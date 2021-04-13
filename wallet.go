@@ -1,7 +1,9 @@
 // Package rpcclient provides ...
 package rpcclient
 
-import "github.com/duminghui/go-rpcclient/cmdjson"
+import (
+	"github.com/duminghui/go-rpcclient/cmdjson"
+)
 
 type FutureListReceivedByAddressResult chan *serverResponse
 
@@ -86,4 +88,21 @@ func (c *Client) GetTransactionAsync(txid string, includeWatchOnly *bool) Future
 
 func (c *Client) GetTransaction(txid string, includeWatchOnly *bool) (*cmdjson.GetTransactionResult, error) {
 	return c.GetTransactionAsync(txid, includeWatchOnly).Receive()
+}
+
+type FutureListUnspentResult chan *serverResponse
+
+func (r FutureListUnspentResult) Receive() ([]cmdjson.ListUnspentResult, error) {
+	var result []cmdjson.ListUnspentResult
+	err := unmarshalFuture(r, &result)
+	return result, err
+}
+
+func (c *Client) ListUnspentAsync(minConf, maxConf *int, addrs []string) FutureListUnspentResult {
+	cmd := cmdjson.NewListUnspentCmd(minConf, maxConf, &addrs)
+	return c.sendCmd(cmd)
+}
+
+func (c *Client) ListUnspent(minConf, maxConf *int, addr []string) ([]cmdjson.ListUnspentResult, error) {
+	return c.ListUnspentAsync(minConf, maxConf, addr).Receive()
 }

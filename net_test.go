@@ -5,14 +5,6 @@ import (
 	"testing"
 )
 
-var config = &ConnConfig{
-	Name:    "BCRM",
-	Host:    "127.0.0.1:12095",
-	User:    "tmp",
-	Pass:    "tmp",
-	LogJSON: true,
-}
-
 func TestGetConnectionCount(t *testing.T) {
 	//t.SkipNow()
 	client := New(config)

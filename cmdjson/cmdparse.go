@@ -10,23 +10,42 @@ import (
 )
 
 // makeParams creates a slice of interface values for the given struct.
+//func makeParams(rt reflect.Type, rv reflect.Value) []interface{} {
+//	numFields := rt.NumField()
+//	params := make([]interface{}, 0, numFields)
+//	lastParam := -1
+//	for i := 0; i < numFields; i++ {
+//		rtf := rt.Field(i)
+//		rvf := rv.Field(i)
+//		params = append(params, rvf.Interface())
+//		if rtf.Type.Kind() == reflect.Ptr {
+//			if rvf.IsNil() {
+//				// Omit optional null params unless a non-null param follows
+//				continue
+//			}
+//		}
+//		lastParam = i
+//	}
+//	return params[:lastParam+1]
+//}
+
 func makeParams(rt reflect.Type, rv reflect.Value) []interface{} {
 	numFields := rt.NumField()
 	params := make([]interface{}, 0, numFields)
-	lastParam := -1
 	for i := 0; i < numFields; i++ {
-		rtf := rt.Field(i)
+		rft := rt.Field(i)
 		rvf := rv.Field(i)
-		params = append(params, rvf.Interface())
-		if rtf.Type.Kind() == reflect.Ptr {
+		if rft.Type.Kind() == reflect.Ptr {
 			if rvf.IsNil() {
-				// Omit optional null params unless a non-null param follows
-				continue
+				break
 			}
+			// TODO why do this
+			rvf.Elem()
 		}
-		lastParam = i
+		params = append(params, rvf.Interface())
 	}
-	return params[:lastParam+1]
+
+	return params
 }
 
 // MarshalCmd marshals the passed command to a JSON-RPC request byte slice that

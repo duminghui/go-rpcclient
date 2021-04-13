@@ -29,6 +29,20 @@ func SetLog(logger *logrus.Logger) {
 	log = logger
 }
 
+// rawResponse is a partially-unmarshaled JSON-RPC response.  For this
+// to be valid (according to JSON-RPC 1.0 spec), ID may not be nil.
+type rawResponse struct {
+	Result json.RawMessage   `json:"result"`
+	Error  *cmdjson.RPCError `json:"error"`
+}
+
+func (r rawResponse) result() (result []byte, err error) {
+	if r.Error != nil {
+		return nil, r.Error
+	}
+	return r.Result, nil
+}
+
 type sendPostDetails struct {
 	httpRequest   *http.Request
 	serverRequest *serverRequest
@@ -110,15 +124,15 @@ func (c *Client) handleSendPostMessage(details *sendPostDetails) {
 			log.Infof("[%s]RPC response [%s](%d)\n%s", c.config.Name, serverReq.method, serverReq.id, indentJSONOut.Bytes())
 		}
 	}
-	var resp cmdjson.Response
+	var resp rawResponse
 	err = json.Unmarshal(respBytes, &resp)
 	if err != nil {
 		err = fmt.Errorf("status code: %d, response: %q", httpResp.StatusCode, string(respBytes))
 		serverReq.serverResponseChan <- &serverResponse{err: err}
 		return
 	}
-
-	serverReq.serverResponseChan <- &serverResponse{result: resp.Result, err: resp.Error}
+	res, err := resp.result()
+	serverReq.serverResponseChan <- &serverResponse{result: res, err: err}
 }
 
 func (c *Client) sendPostHandler() {
@@ -185,7 +199,6 @@ func (c *Client) sendCmd(cmd interface{}) chan *serverResponse {
 	id := c.NextID()
 
 	marshalledJSON, err := cmdjson.MarshalCmd(cmdjson.RpcVersion1, id, cmd)
-	fmt.Println(string(marshalledJSON))
 
 	if err != nil {
 		return newFutureError(err)

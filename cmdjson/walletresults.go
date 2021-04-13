@@ -18,22 +18,46 @@ type ValidateAddressResult struct {
 	IsCompressed bool   `json:"iscompressed"`
 }
 
-type GetTransactionResult struct {
-	Amount        float64                `json:"amount"`
-	Fee           float64                `json:"fee,omitempty"`
-	Confirmations int64                  `json:"confirmations"`
-	BlockHash     string                 `json:"blockhash"`
-	BlockIndex    int64                  `json:"blockindex"`
-	BlockTime     int64                  `json:"blocktime"`
-	Details       []GetTransactionDetail `json:"details"`
+// GetTransactionDetailsResult models the details data from the gettransaction command.
+//
+// This models the "short" version of the ListTransactionsResult type, which
+// excludes fields common to the transaction.  These common fields are instead
+// part of the GetTransactionResult.
+type GetTransactionDetailsResult struct {
+	Account           string   `json:"account"`
+	Address           string   `json:"address,omitempty"`
+	Amount            float64  `json:"amount"`
+	Category          string   `json:"category"`
+	InvolvesWatchOnly bool     `json:"involveswatchonly,omitempty"`
+	Fee               *float64 `json:"fee,omitempty"`
+	Vout              uint32   `json:"vout"`
 }
 
-type GetTransactionDetail struct {
-	Account  string  `json:"account"`
-	Address  string  `json:"address"`
-	Category string  `json:"category"`
-	Amount   float64 `json:"amount"`
-	Label    string  `json:"label"`
-	Vout     uint32  `json:"vout"`
-	Fee      float64 `json:"fee,omitempty"`
+// GetTransactionResult models the data from the gettransaction command.
+type GetTransactionResult struct {
+	Amount          float64                       `json:"amount"`
+	Fee             float64                       `json:"fee,omitempty"`
+	Confirmations   int64                         `json:"confirmations"`
+	BlockHash       string                        `json:"blockhash"`
+	BlockIndex      int64                         `json:"blockindex"`
+	BlockTime       int64                         `json:"blocktime"`
+	TxID            string                        `json:"txid"`
+	WalletConflicts []string                      `json:"walletconflicts"`
+	Time            int64                         `json:"time"`
+	TimeReceived    int64                         `json:"timereceived"`
+	Details         []GetTransactionDetailsResult `json:"details"`
+	Hex             string                        `json:"hex"`
+}
+
+// ListUnspentResult models a successful response from the listunspent request.
+type ListUnspentResult struct {
+	TxID          string  `json:"txid"`
+	Vout          uint32  `json:"vout"`
+	Address       string  `json:"address"`
+	Account       string  `json:"account"`
+	ScriptPubKey  string  `json:"scriptPubKey"`
+	RedeemScript  string  `json:"redeemScript,omitempty"`
+	Amount        float64 `json:"amount"`
+	Confirmations int64   `json:"confirmations"`
+	Spendable     bool    `json:"spendable"`
 }
